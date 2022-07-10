@@ -1,0 +1,244 @@
+<html>
+   <head>
+      <script>
+         //function that display value
+         function dis(val)
+         {
+             document.getElementById("result").value+=val
+         }
+         
+         // function that checks if the value is an operator
+         function isOperator(val)
+         {
+            return /^[-+*!\/]+$/i.test(val);
+         }
+
+         // this function is testing is the equation string well formated
+         function check_operation(val)
+         {
+            for (let i = 0; i < val.length; i++) {
+                if (typeof val[i] !== 'string') {
+                    console.log('invalid type of char')
+                    return false;
+                }
+                if (/^[012345\-6789\/*+!]+$/i.test(val[i]) == false) {
+                    console.log('invalid character')
+                    return false
+                }
+                if (i == 0 && isOperator(val[i]) && val[i] !== '-') {
+                    console.log('error starting operator')
+                    return false
+                }
+                if (isOperator(val[i])) {
+                    if (i + 1 < val.length) {
+                        if (val[i] == '!' && val[i + 1] == '!') {
+                            return false
+                        }
+                        if (isOperator(val[i + 1]) && val[i] !== '!' && val[i + 1] !== '-') {
+                            return false
+                        }
+                    } else {
+                        if (val[i] !== '!') {
+                            return false
+                        }
+                    }
+                }
+            }
+            if (val.includes('---'))
+                return false
+            return true
+         }
+
+        // this function is splitting the string into an array of substring to prepare operations
+         function split_eq(val)
+         {
+            var splited = Array.from(val)
+            var sign = false
+            res = []
+            var param = ''
+            for (let i = 0; i < splited.length; i++) {
+                if (/^[0123456789]+$/i.test(splited[i][0])) {
+                    param += splited[i][0]
+                }
+                if (/^[-+*!\/]+$/i.test(splited[i][0])) {
+                    if (param !== '') {
+                        // number seems to handle overflow
+                        res.push(Number(param))
+                        param = ''
+                    }
+                    res.push(splited[i][0])
+                }
+            }
+            if (param !== '') {
+                // number seems to handle overflow
+                res.push(Number(param))
+                param = ''
+            }
+            console.log(res)
+            return res
+         }
+
+         // the api call for factorial
+         async function getFactorial(nb)
+         {
+            var myHeaders = new Headers();
+
+            var myInit = { method: 'GET',
+               headers: myHeaders,
+               mode: 'cors',
+               cache: 'default' };
+            
+            fetch('http://localhost:3000/factorial?' + new URLSearchParams({
+                        nbr: nb
+                    }), myInit)
+                    .then(function(response) {
+                        return response.blob();
+                    })
+                    .then(function(myBlob) {
+                        var objectURL = URL.createObjectURL(myBlob);
+                        var data = objectURL;
+                    });
+            // let data = await response.json()
+            console.log(data)
+            return data
+         }
+
+        // this function will call the 
+         function factorial_check(val)
+         {
+            for (let i = 0; i < val.length; i++) {
+                if (val[i] == '!') {
+                    val[i - 1] = getFactorial(val[i + 1])
+                    val.splice(i, 1)
+                }
+            }
+            return (val)
+         }
+
+         // function that makes all div / mul operations
+         function mul_div_check(val)
+         {
+            for (let i = 0; i < val.length; i++) {
+                if (val[i] == '*') {
+                    val[i - 1] = getmul(val[i - 1], val[i + 1]) // undone
+                    val.splice(i, 1)
+                    val.splice(i + 1, 1)
+                }
+                if (val[i] == '/') {
+                    val[i - 1] = getdiv(val[i - 1], val[i + 1]) // undone
+                    val.splice(i, 1)
+                    val.splice(i + 1, 1)
+                }
+            }
+            return (val)
+         }
+
+         // function that makes all sub/add operations
+         function add_sub_check(val)
+         {
+            for (let i = 0; i < val.length; i++) {
+                if (val[i] == '+') {
+                    val[i - 1] = getadd(val[i - 1], val[i + 1]) // undone
+                    val.splice(i, 1)
+                    val.splice(i + 1, 1)
+                }
+                if (val[i] == '-') {
+                    val[i - 1] = getdiv(val[i - 1], val[i + 1]) // undone
+                    val.splice(i, 1)
+                    val.splice(i + 1, 1)
+                }
+            }
+            return (val)
+         }
+
+        // this function will call the api in order determined by mathematicals order managment
+         function priority_managment(val)
+         {
+            // the handling of multiples operators are not handled yet ex : ( 15+-12)
+            val = factorial_check(val)
+            val = mul_div_check(val)
+            val = add_sub_check(val)
+            return val[0]
+         }
+
+         //function that evaluates the digit and return result
+         function solve()
+         {
+             let eq = document.getElementById("result").value
+             if (!check_operation(eq)) {
+                console.log('error params')
+                return 'Error invalid params'
+             }
+             eq = split_eq(eq)
+             eq = priority_managment(eq)
+            //  console.log(eq)
+             document.getElementById("result").value = eq.toString()
+         }
+           
+         //function that clear the display
+         function clr()
+         {
+             document.getElementById("result").value = ""
+         }
+      </script>
+      <!-- for styling -->
+      <style>
+         .title{
+         margin-bottom: 10px;
+         text-align:center;
+         width: 210px;
+         color:green;
+         border: solid black 2px;
+         }
+  
+         input[type="button"]
+         {
+         background-color:green;
+         color: black;
+         border: solid black 2px;
+         width:100%
+         }
+  
+         input[type="text"]
+         {
+         background-color:white;
+         border: solid black 2px;
+         width:100%
+         }
+      </style>
+   </head>
+   <!-- create table -->
+   <body>
+      <table border="1">
+         <tr>
+            <td colspan="3"><input type="text" id="result"/></td>
+            <!-- clr() function will call clr to clear all value -->
+            <td><input type="button" value="c" onclick="clr()"/> </td>
+         </tr>
+         <tr>
+            <td><input type="button" value="1" onclick="dis('1')"/> </td>
+            <td><input type="button" value="2" onclick="dis('2')"/> </td>
+            <td><input type="button" value="3" onclick="dis('3')"/> </td>
+            <td><input type="button" value="/" onclick="dis('/')"/> </td>
+         </tr>
+         <tr>
+            <td><input type="button" value="4" onclick="dis('4')"/> </td>
+            <td><input type="button" value="5" onclick="dis('5')"/> </td>
+            <td><input type="button" value="6" onclick="dis('6')"/> </td>
+            <td><input type="button" value="-" onclick="dis('-')"/> </td>
+         </tr>
+         <tr>
+            <td><input type="button" value="7" onclick="dis('7')"/> </td>
+            <td><input type="button" value="8" onclick="dis('8')"/> </td>
+            <td><input type="button" value="9" onclick="dis('9')"/> </td>
+            <td><input type="button" value="+" onclick="dis('+')"/> </td>
+         </tr>
+         <tr>
+            <td><input type="button" value="!" onclick="dis('!')"/> </td>
+            <td><input type="button" value="0" onclick="dis('0')"/> </td>
+            <td><input type="button" value="=" onclick="solve()"/> </td>
+            <td><input type="button" value="*" onclick="dis('*')"/> </td>
+         </tr>
+      </table>
+   </body>
+</html>   
